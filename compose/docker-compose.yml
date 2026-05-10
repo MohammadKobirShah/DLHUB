@@ -1,0 +1,88 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: dlhub_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - downloads:/downloads
+      - logs:/logs
+    environment:
+      - API_HOST=0.0.0.0
+      - API_PORT=8000
+      - LOG_LEVEL=INFO
+      - DATABASE_URL=postgresql://dlhub:dlhub123@postgres:5432/dlhub
+      - REDIS_URL=redis://redis:6379/0
+      - DOWNLOAD_DIR=/downloads
+      - TEMP_DIR=/tmp/dlhub
+      - MAX_CONCURRENT_DOWNLOADS=50
+      - WORKER_COUNT=4
+      - ENABLE_SSRF_PROTECTION=true
+      - ENABLE_RATE_LIMIT=false
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: dlhub_postgres
+    environment:
+      - POSTGRES_USER=dlhub
+      - POSTGRES_PASSWORD=dlhub123
+      - POSTGRES_DB=dlhub
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dlhub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: dlhub_redis
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: nginx:alpine
+    container_name: dlhub_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - downloads:/var/www/dlhub:ro
+      - logs:/var/log/nginx
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  downloads:
+  logs:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: dlhub_network
