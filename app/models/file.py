@@ -62,7 +62,7 @@ class File(Base):
     codec = Column(String(50), nullable=True)
     audio_codec = Column(String(50), nullable=True)
 
-    metadata = Column(JSON, nullable=True)
+    extra_data = Column(JSON, nullable=True)
     tags = Column(JSON, nullable=True)
 
     downloads = Column(BigInteger, nullable=True, default=0)

@@ -83,7 +83,7 @@ class Job(Base):
     completed_at = Column(DateTime, nullable=True)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    metadata = Column(JSON, nullable=True)
+    extra_data = Column(JSON, nullable=True)
 
     def __repr__(self):
         return f"<Job {self.id} - {self.status.value}: {self.url[:50]}>"
@@ -138,5 +138,5 @@ class Job(Base):
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
-            "metadata": self.metadata,
+            "metadata": self.extra_data,
         }
