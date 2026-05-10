@@ -1,11 +1,6 @@
-"""
-DLHUB - Multi-stage Production Dockerfile
-==========================================
-Optimized for size and security.
-
-Developer: Md Kobir Shah
-GitHub: @MohammadKobirShah
-"""
+# DLHUB - Multi-stage Production Dockerfile
+# Optimized for size and security
+# Developer: Md Kobir Shah | GitHub: @MohammadKobirShah
 
 FROM python:3.12-slim AS builder
 
