@@ -1,0 +1,29 @@
+{
+  "name": "dlhub",
+  "version": "1.0.0",
+  "description": "High-Performance Open Media Downloading Platform",
+  "author": "Md Kobir Shah",
+  "repository": "https://github.com/MohammadKobirShah/DLHUB",
+  "runtime": "python",
+  "pythonVersion": "3.12",
+  "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port $PORT",
+  "buildCommand": "pip install -r requirements.txt",
+  "installCommand": "pip install -r requirements.txt",
+  "port": 8000,
+  "env": {
+    "PYTHONUNBUFFERED": "1",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "build": {
+    "method": "pip",
+    "requirements": "requirements.txt"
+  },
+  "run": {
+    "cmd": "uvicorn",
+    "args": [
+      "app.main:app",
+      "--host", "0.0.0.0",
+      "--port", "$PORT"
+    ]
+  }
+}
