@@ -24,18 +24,26 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan - startup and shutdown events."""
-    logger.info(f"Starting {settings.APP_NAME} v{settings.VERSION}")
-    logger.info(f"Download directory: {settings.DOWNLOAD_DIR}")
-    logger.info(f"Max concurrent downloads: {settings.MAX_CONCURRENT_DOWNLOADS}")
+    try:
+        logger.info(f"Starting {settings.APP_NAME} v{settings.VERSION}")
+        logger.info(f"Download directory: {settings.DOWNLOAD_DIR}")
+        logger.info(f"Max concurrent downloads: {settings.MAX_CONCURRENT_DOWNLOADS}")
+        logger.info(f"Database URL: {settings.DATABASE_URL.split('@')[1] if '@' in settings.DATABASE_URL else 'configured'}")
 
-    await init_db()
-    logger.info("Database initialized")
+        await init_db()
+        logger.info("Database initialized")
+    except Exception as e:
+        logger.error(f"Startup failed: {e}")
+        raise
 
     yield
 
-    logger.info("Shutting down DLHUB...")
-    await close_db()
-    logger.info("Database connections closed")
+    try:
+        logger.info("Shutting down DLHUB...")
+        await close_db()
+        logger.info("Database connections closed")
+    except Exception as e:
+        logger.error(f"Shutdown error: {e}")
 
 
 app = FastAPI(

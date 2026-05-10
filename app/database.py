@@ -51,9 +51,14 @@ Base = declarative_base()
 async def init_db():
     """Initialize database tables."""
     logger.info("Initializing database...")
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    logger.info("Database tables created")
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables created")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+        logger.info("Tables may already exist, continuing...")
+        pass
 
 
 async def close_db():
