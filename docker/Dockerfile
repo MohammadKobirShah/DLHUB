@@ -25,7 +25,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir yt-dlp
+# Install latest yt-dlp with all dependencies
+# Latest stable: 2026.3.17
+RUN python3 -m pip install -U "yt-dlp[default]"
 
 RUN useradd -m -u 1000 -s /bin/bash appuser || true
 
@@ -50,4 +52,5 @@ ENV PYTHONUNBUFFERED=1 \
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+# Use fewer workers and enable proper worker timeout handling
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2", "--timeout-keep-alive", "30", "--max-requests", "1000", "--max-requests-jitter", "50"]

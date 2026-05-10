@@ -315,6 +315,9 @@ class YTDLPService:
         logger.debug(f"yt-dlp command: {' '.join(cmd)}")
 
         try:
+            logger.info(f"Starting yt-dlp subprocess for {url}")
+            logger.debug(f"yt-dlp command: {' '.join(cmd)}")
+            
             process = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
@@ -327,12 +330,17 @@ class YTDLPService:
                     timeout=settings.WORKER_TIMEOUT
                 )
             except asyncio.TimeoutError:
+                logger.warning(f"yt-dlp process timed out after {settings.WORKER_TIMEOUT}s, killing...")
                 process.kill()
-                await process.wait()
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=10)
+                except asyncio.TimeoutError:
+                    logger.error("yt-dlp process did not terminate gracefully")
                 raise DownloadTimeoutException(f"Download timed out after {settings.WORKER_TIMEOUT}s")
 
             output = stdout.decode() + stderr.decode()
             logger.debug(f"yt-dlp output: {output}")
+            logger.info(f"yt-dlp process completed with return code: {process.returncode}")
 
             if process.returncode != 0:
                 if "HTTP Error 403" in output:

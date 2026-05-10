@@ -28,6 +28,8 @@ class WorkerPool:
 
     async def start(self):
         """Start all workers in the pool."""
+        import time
+        start_time = time.time()
         logger.info(f"Starting worker pool with {self.worker_count} workers")
         self.running = True
 
@@ -35,20 +37,35 @@ class WorkerPool:
             worker = DownloadWorker(worker_id=f"worker-{i}")
             self.workers.append(worker)
 
-            task = asyncio.create_task(worker.start())
+            task = asyncio.create_task(worker.start(), name=f"worker-{i}")
             self.tasks.append(task)
+            logger.info(f"Started worker task: {task.get_name()}")
 
-        logger.info(f"Worker pool started with {len(self.workers)} workers")
+        logger.info(f"Worker pool started with {len(self.workers)} workers in {time.time() - start_time:.3f}s")
 
     async def stop(self):
         """Stop all workers in the pool."""
+        import time
+        start_time = time.time()
         logger.info("Stopping worker pool")
         self.running = False
 
+        cancelled_tasks = []
         for task in self.tasks:
+            logger.info(f"Cancelling task: {task.get_name()}")
             task.cancel()
+            cancelled_tasks.append(task)
 
-        await asyncio.gather(*self.tasks, return_exceptions=True)
+        try:
+            await asyncio.wait_for(
+                asyncio.gather(*cancelled_tasks, return_exceptions=True),
+                timeout=30.0
+            )
+        except asyncio.TimeoutError:
+            logger.warning("Some tasks did not cancel gracefully, forcing shutdown")
+            for task in cancelled_tasks:
+                if not task.done():
+                    task.cancel()
 
         for worker in self.workers:
             try:
@@ -56,7 +73,7 @@ class WorkerPool:
             except Exception as e:
                 logger.error(f"Error stopping worker {worker.worker_id}: {e}")
 
-        logger.info("Worker pool stopped")
+        logger.info(f"Worker pool stopped in {time.time() - start_time:.3f}s")
 
     async def restart_worker(self, worker_id: str):
         """Restart a specific worker."""

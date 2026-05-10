@@ -24,6 +24,24 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan - startup and shutdown events."""
+    import signal
+    import asyncio
+    
+    # Setup signal handlers for graceful shutdown
+    shutdown_event = asyncio.Event()
+    
+    def signal_handler():
+        logger.info("Received shutdown signal")
+        shutdown_event.set()
+    
+    # Register signal handlers
+    try:
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+    except (AttributeError, ValueError):
+        # Not available in all environments (like Windows)
+        pass
+    
     try:
         logger.info(f"Starting {settings.APP_NAME} v{settings.VERSION}")
         logger.info(f"Download directory: {settings.DOWNLOAD_DIR}")

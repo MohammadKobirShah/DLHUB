@@ -84,23 +84,34 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 @contextmanager
 def get_db_sync():
     """Get synchronous database session for background tasks."""
+    import logging
+    import time
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
 
+    logger = logging.getLogger(__name__)
+    start_time = time.time()
+    
     sync_db_url = settings.DATABASE_URL.replace("postgresql://", "postgresql://")
-    sync_engine = create_engine(sync_db_url, pool_pre_ping=True)
+    logger.debug(f"Creating new sync engine for database connection: {sync_db_url.split('@')[1] if '@' in sync_db_url else 'configured'}")
+    
+    sync_engine = create_engine(sync_db_url, pool_pre_ping=True, pool_size=5, max_overflow=10)
     sync_session = sessionmaker(bind=sync_engine)
 
     session = sync_session()
     try:
+        logger.debug(f"Database session created in {time.time() - start_time:.3f}s")
         yield session
         session.commit()
-    except Exception:
+        logger.debug("Database session committed successfully")
+    except Exception as e:
+        logger.error(f"Database session error: {e}")
         session.rollback()
         raise
     finally:
         session.close()
-        sync_engine.dispose()
+        logger.debug(f"Database session closed after {time.time() - start_time:.3f}s")
+        # Don't dispose the engine here - let it be managed by the application lifecycle
 
 
 async def get_db_context() -> AsyncSession:

@@ -48,24 +48,37 @@ class DownloadWorker:
 
     async def _process_loop(self):
         """Main processing loop."""
+        import time
+        import traceback
+        loop_start_time = time.time()
+        logger.info(f"Worker {self.worker_id} starting processing loop")
+        
         while self.running:
+            loop_iteration = time.time() - loop_start_time
+            logger.debug(f"Worker {self.worker_id} loop iteration: {loop_iteration:.1f}s")
+            
             try:
                 if await queue_manager.is_queue_paused():
+                    logger.debug(f"Worker {self.worker_id} queue paused, sleeping...")
                     await asyncio.sleep(5)
                     continue
 
                 job_id = await queue_client.get_next_job()
                 if not job_id:
+                    logger.debug(f"Worker {self.worker_id} no jobs, sleeping...")
                     await asyncio.sleep(2)
                     continue
 
+                logger.info(f"Worker {self.worker_id} processing job: {job_id}")
                 await self._process_job(job_id)
 
             except asyncio.CancelledError:
                 logger.info(f"Worker {self.worker_id} cancelled")
                 break
             except Exception as e:
-                logger.error(f"Worker error: {e}")
+                logger.error(f"Worker {self.worker_id} error: {e}")
+                logger.error(f"Worker {self.worker_id} error type: {type(e).__name__}")
+                logger.error(f"Worker {self.worker_id} traceback: {traceback.format_exc()}")
                 await asyncio.sleep(5)
 
     async def _process_job(self, job_id: str):
