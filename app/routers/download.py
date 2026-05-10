@@ -376,7 +376,7 @@ async def get_job_status(
         thumbnail_url=job.thumbnail_url,
         uploader=job.uploader,
         duration=job.duration,
-        format=job.format,
+        format=job.video_format,
         quality=job.quality,
         output_format=job.output_format,
         file_path=job.file_path,

@@ -54,7 +54,7 @@ class Job(Base):
     view_count = Column(BigInteger, nullable=True)
     like_count = Column(BigInteger, nullable=True)
 
-    format = Column(String(50), nullable=True)
+    video_format = Column(String(50), nullable=True)
     quality = Column(String(50), nullable=True)
     output_format = Column(String(20), nullable=True, default="mp4")
 
@@ -121,7 +121,7 @@ class Job(Base):
             "duration": self.duration,
             "view_count": self.view_count,
             "like_count": self.like_count,
-            "format": self.format,
+            "format": self.video_format,
             "quality": self.quality,
             "output_format": self.output_format,
             "file_path": self.file_path,
